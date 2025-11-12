@@ -8,9 +8,26 @@
     "@testing-library/jest-dom": "^6.8.0",
     "@testing-library/react": "^16.3.0",
     "@testing-library/user-event": "^13.5.0",
+    "bcrypt": "^6.0.0",
+    "chart.js": "^4.5.0",
+    "cors": "^2.8.5",
+    "express": "^5.1.0",
+    "i18next": "^24.2.3",
+    "i18next-browser-languagedetector": "^8.2.0",
+    "i18next-http-backend": "^3.0.2",
+    "jspdf": "^3.0.3",
+    "jwt-decode": "^4.0.0",
+    "mongoose": "^8.18.2",
+    "node-localstorage": "^3.0.5",
     "react": "18.3.1",
+    "react-chartjs-2": "^5.3.0",
     "react-dom": "18.3.1",
-    "react-scripts": "^5.0.1",
+    "react-facebook-login": "^4.1.1",
+    "react-github-login": "^1.0.3",
+    "react-i18next": "^14.1.3",
+    "react-router-dom": "^6.30.1",
+    "react-scripts": "5.0.1",
+    "react-social-login-buttons": "^4.1.1",
     "web-vitals": "^2.1.4"
   },
   "scripts": {
@@ -36,5 +53,15 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
+  },
+  "devDependencies": {
+    "@pmmmwh/react-refresh-webpack-plugin": "^0.6.1",
+    "babel-loader": "^10.0.0",
+    "html-webpack-plugin": "^5.6.4",
+    "react-refresh": "^0.17.0",
+    "typescript": "^4.9.5",
+    "webpack": "^5.101.3",
+    "webpack-cli": "^6.0.1",
+    "webpack-dev-server": "^5.2.2"
   }
 }

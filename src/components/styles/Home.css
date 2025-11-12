@@ -1,0 +1,91 @@
+.homePage {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  background: #2D3748;
+  border-radius: 2em;
+  color: #fff;
+  width: 85%;
+  margin: 15px auto 60px auto;
+  padding: 2em;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+body.light .homePage {
+  background: #F3F4F6;
+  color: #1F2937;
+}
+
+.homeSummary {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.balanceCard, .kpiCard {
+  flex: 1 1 150px;
+  padding: 15px;
+  background: #23293a;
+  border-radius: 8px;
+  text-align: center;
+  color: #fff;
+}
+body.light .balanceCard, body.light .kpiCard {
+  background: #f3f4f6;
+  color: #1F2937;
+}
+
+.homeActions {
+  display: flex;
+  gap: 15px;
+}
+
+.homeTransactions table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.homeTransactions th, .homeTransactions td {
+  border: 1px solid #ccc;
+  padding: 8px;
+  text-align: center;
+}
+
+.homeBudgets .budgetCard {
+  margin-bottom: 10px;
+}
+
+.progressBar {
+  width: 100%;
+  background: #ddd;
+  height: 10px;
+  border-radius: 5px;
+  overflow: hidden;
+}
+
+.progressBar .progress {
+  height: 10px;
+  background: #4f46e5;
+  border-radius: 5px;
+}
+
+.homeAnalyticsPreview {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.miniChart {
+  flex: 1 1 300px;
+  height: 200px;
+  background: #23293a;
+  border-radius: 8px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: #fff;
+}
+body.light .miniChart {
+  background: #fff;
+  color: #1F2937;
+}

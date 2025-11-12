@@ -1,0 +1,319 @@
+body {
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+  transition: background 0.4s, color 0.4s;
+  background: linear-gradient(135deg, #F5F7FA 0%, #E6ECF2 100%) !important;
+  background-attachment: fixed;
+  color: #1F2937;
+}
+
+#header, #main, #mainHComponents, h1, h2, h3, h4, p, label, #link, a, button, input, select, .language-buttons button, .theme-switcher button {
+  transition: background 0.4s, color 0.4s, border-color 0.4s, box-shadow 0.4s;
+}
+
+::-webkit-scrollbar { width: 15px; }
+::-webkit-scrollbar-track { background: #f1f1f1; }
+::-webkit-scrollbar-thumb { background: rgba(3, 80, 161, 0.486); }
+::-webkit-scrollbar-thumb:hover { background: #555; }
+
+.headerBase {
+  margin: 0 auto;
+  padding: 2em;
+  border-radius: 2em;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 45px;
+}
+
+.loginSignupHeader {
+  width: 50%;
+}
+
+.homeHeader {
+  width: 85%;
+}
+
+.homeInner, .loginSignupInner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+#main {
+  background: rgba(0, 0, 0, .9);
+  margin: 15px auto;
+  width: 50%;
+  height: 80%;
+  padding: 0em 2em 1.5em;
+  border-radius: 2em;
+  white-space: nowrap;
+}
+
+#mainHComponents {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+.headerGroup {
+  display: flex;
+  align-items: center;
+  gap: 25px;
+}
+
+.headerGroup a {
+  display: flex;
+  flex-direction: column; /* ставимо картинку над текстом */
+  align-items: center;    /* центруємо по горизонталі */
+  text-decoration: none;  /* прибирає підкреслення */
+  color: inherit;         /* успадковує колір */
+}
+
+.headerGroup img {
+  width: 35px;
+  height: 35px;
+  margin-bottom: 4px; /* відступ між картинкою і текстом */
+}
+
+.headerGroup h4 {
+  margin: 0;
+  font-size: 14px;
+  text-align: center;
+}
+
+.headerRight {
+  margin-right: 0px;
+  display: flex;
+  flex-direction: row; 
+  align-items: center;    
+  gap: 80px;
+}
+
+h1, h2, h3, h4, p, label {
+  color: white;
+  margin: 0 auto;
+}
+
+#link, a {
+  text-decoration: none;
+  color: white;
+}
+#link:hover, a:hover {
+  text-decoration: underline;
+  color: white;
+}
+
+input, button, select {
+  border: none;
+  background-color: rgb(50, 50, 50);
+  color: rgb(255, 255, 255);
+  border-radius: 5px;
+}
+
+input { width: 50%; }
+
+button {
+  width: 52%;
+  border-color: aliceblue;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  box-sizing: border-box;
+}
+
+form {
+  display: flex;
+  flex-direction: column;
+}
+
+#button { margin: 0 0 0 39%; width: 27%; }
+
+#regforms {
+  padding: 10px;
+  font-size: 17px;
+  font-weight: 800;
+  border-radius: 5px;
+  margin: 0 auto;
+}
+
+#regforms_ {
+  padding: 10px;
+  font-size: 17px;
+  font-weight: 800;
+  border-radius: 5px;
+  margin: 0 0 0 0;
+  align-self: center;
+  width: 250px;
+}
+
+#header #link { margin: 0 15px; }
+
+.tableStyle {
+  color: #f1f1f1;
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
+}
+
+.language-buttons button {
+  background-color: transparent;
+  border: none;
+  text-decoration-style: solid;
+  border-radius: 3px;
+  width: 40px;
+  color: white;
+  font-size: 14px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 5px;
+}
+
+.language-buttons button:hover {
+  background-color: cadetblue;
+}
+
+.theme-switcher {
+  position: fixed;
+  top: 90%;
+  right: -15px;
+  transform: translateY(-50%);
+  border-right: none;
+  padding: 5px;
+  box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+  z-index: 1000;
+}
+.theme-switcher button {
+  display: block;
+  margin: 10px 0;
+  margin-right: 30px;
+  padding: 1px;
+  background-color: rgba(0, 0, 0, .9);
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  cursor: pointer;
+  width: 70%;
+  transition: background-color 0.3s, color 0.3s;
+  color: #ccc;
+}
+.theme-switcher button:hover { background-color: #e0e0e0; }
+
+body.light {
+  color: #1F2937;
+  background: linear-gradient(270deg, #E6F0FA, #BFD9F5, #A3C2F0, #D0E4FF) !important;
+  background-size: 600% 600%;
+  animation: gradientShift 20s ease infinite;
+}
+body.light .headerBase { background: #F3F4F6; }
+body.light #main {
+  background: #F3F4F6;
+  color: #1F2937;
+}
+body.light h1, body.light h2, body.light h3, body.light h4, body.light p, body.light label { color: #1F2937; }
+body.light #mainHComponents { color: #1F2937; }
+body.light input, body.light select { background-color: #FFFFFF; color: #1F2937; border: 1px solid #CED4DA; }
+body.light button { background-color: #4299E1; color: #FFFFFF; }
+body.light button:hover { background-color: #1D4ED8; color: #FFFFFF; }
+body.light #link, body.light a { color: #1D4ED8; }
+body.light #link:hover, body.light a:hover { color: #1D4ED8; }
+body.light .language-buttons button { color: #FFFFFF; }
+body.light .language-buttons button:hover { background-color: #1D4ED8; }
+body.light ::-webkit-scrollbar-thumb { background: rgba(3, 111, 226, 0.4); }
+body.light .tableStyle { color: #1F2937; background-color: #FFFFFF; border: 1px solid #CED4DA; }
+body.light .theme-switcher button { background-color: #F3F4F6; color: #1F2937; }
+body.light .userAvatarImg { border-color: #1D4ED8;}
+body.light .userDropdownMenu { background: #fff; border: 1px solid #ccc;}
+body.light .userDropdownMenu .menuItem:hover { background-color: #f0f0f0;}
+
+body.dark {
+  color: #E5E7EB;
+  background: linear-gradient(270deg, #1A202C, #2A2F42, #3A4255, #2D3748) !important;
+  background-size: 600% 600%;
+  animation: gradientShift 20s ease infinite;
+}
+body.dark .headerBase { background: #2D3748; }
+body.dark #main {
+  background: #2D3748;
+  color: #E5E7EB;
+}
+body.dark h1, body.dark h2, body.dark h3, body.dark h4, body.dark p, body.dark label { color: #E5E7EB; }
+body.dark #mainHComponents { color: #E5E7EB; }
+body.dark input, body.dark select { background-color: rgb(45, 45, 45); color: rgb(200, 200, 200); border: none; }
+body.dark button { background-color: #007BFF; color: #FFFFFF; }
+body.dark button:hover { background-color: #1D4ED8; color: #FFFFFF; }
+body.dark #link, body.dark a { color: #80d4ff; }
+body.dark #link:hover, body.dark a:hover { color: #1eb1f6; }
+body.dark .language-buttons button { color: #e0e0e0; }
+body.dark .language-buttons button:hover { background-color: #1D4ED8; }
+body.dark ::-webkit-scrollbar-thumb { background: rgba(80, 80, 80, 0.6); }
+body.dark .tableStyle { color: #E5E7EB; background-color: #4A5568; border: 1px solid #4A5568; }
+body.dark .theme-switcher button { background-color: #2D3748; color: #E5E7EB; }
+body.dark .userAvatarImg { border-color: #80d4ff;}
+body.dark .userDropdownMenu { background: #2D3748; border: 1px solid #4A5568;}
+body.dark .userDropdownMenu .menuItem { color: #E5E7EB;}
+body.dark .userDropdownMenu .menuItem.logout { color: #f87171;}
+body.dark .userDropdownMenu .menuItem:hover { background-color: rgba(255, 255, 255, 0.1);}
+
+#title { text-align: center; width: 200px; margin: 0 auto; }
+.userAvatar {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  cursor: pointer;
+}
+
+.userAvatarImg {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  margin-top: -10px;
+  margin-right: -50px;
+  border: 3px solid;
+  transition: border-color 0.3s;
+}
+
+.userName {
+  margin-top: 5px;
+  font-size: 14px;
+  text-align: center;
+  color: inherit;
+}
+.userDropdownMenu {
+  position: absolute;
+  top: 60px;
+  right: -100px;
+  min-width: 160px;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+  overflow: hidden;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-10px);
+  transition: all 0.2s ease;
+  z-index: 1000;
+}
+
+.userDropdownMenu.open {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+.userDropdownMenu .menuItem {
+  padding: 10px 15px;
+  cursor: pointer;
+  transition: background-color 0.2s, color 0.2s;
+  font-weight: bold;
+}
+
+.userDropdownMenu .menuItem:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+.userDropdownMenu .menuItem.logout {
+  color: red;
+}

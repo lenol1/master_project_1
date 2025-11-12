@@ -29,12 +29,12 @@ def load_and_clean_data(file_path):
     df['text_features'] = df['text_features'].fillna('').astype(str)
     # Перейменування для BERT
     df = df.rename(columns={'category_id': 'labels'})
-    print(f"✅ Дані завантажено, {len(df)} рядків.")
+    print(f"Дані завантажено, {len(df)} рядків.")
     return df
 
 # --- 2. Функція навчання SKlearn ---
 def train_sklearn(df):
-    print("--- 🚀 Початок навчання SKLEARN (Random Forest) ---")
+    print("--- Початок навчання SKLEARN (Random Forest) ---")
     
     # Для продакшену ми тренуємо на ВСІХ даних
     X_train = df['text_features']
@@ -45,16 +45,16 @@ def train_sklearn(df):
         ('model', RandomForestClassifier(random_state=42, n_jobs=-1)) # n_jobs=-1 (використовувати всі ядра)
     ])
     
-    print("🔄 Навчання...")
+    print("Навчання...")
     pipeline_rf.fit(X_train, y_train)
     
     # Зберігаємо конвеєр у файл
     joblib.dump(pipeline_rf, config.SKLEARN_MODEL_PATH)
-    print(f"✅ Модель SKlearn збережено у: {config.SKLEARN_MODEL_PATH}")
+    print(f"Модель SKlearn збережено у: {config.SKLEARN_MODEL_PATH}")
 
 # --- 3. Функція навчання BERT ---
 def train_bert(df):
-    print("--- 🚀 Початок навчання BERT ---")
+    print("--- Початок навчання BERT ---")
     NUM_LABELS = df['labels'].nunique()
 
     # Ми все одно розділимо, щоб мати валідацію під час навчання
@@ -88,13 +88,13 @@ def train_bert(df):
         eval_dataset=test_dataset_tokenized,
     )
     
-    print("🔄 Навчання BERT...")
+    print("Навчання BERT...")
     trainer.train()
     
     # Зберігаємо фінальну модель та токенізер
     trainer.save_model(config.BERT_MODEL_PATH)
     tokenizer.save_pretrained(config.BERT_MODEL_PATH)
-    print(f"✅ Модель BERT збережено у: {config.BERT_MODEL_PATH}")
+    print(f"Модель BERT збережено у: {config.BERT_MODEL_PATH}")
 
 # --- 4. Головний блок ---
 if __name__ == "__main__":
@@ -105,4 +105,4 @@ if __name__ == "__main__":
     elif config.MODEL_TYPE == "RF":
         train_sklearn(df)
     else:
-        print(f"❌ Невідомий MODEL_TYPE у config.py: {config.MODEL_TYPE}")
+        print(f"Невідомий MODEL_TYPE у config.py: {config.MODEL_TYPE}")

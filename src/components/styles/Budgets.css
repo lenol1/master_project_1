@@ -1,0 +1,43 @@
+.budgetsPage {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.filters {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.budgetTable {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.budgetTable th, .budgetTable td {
+  border: 1px solid #ccc;
+  padding: 8px;
+  text-align: center;
+}
+
+.budgetTable td {
+  color: #333;
+}
+
+.budgetTable td.overspent {
+  color: red;
+}
+
+.stats {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.addBudget {
+  align-self: flex-end;
+  padding: 10px 20px;
+  border-radius: 5px;
+}

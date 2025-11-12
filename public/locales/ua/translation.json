@@ -1,0 +1,26 @@
+{
+  "analytics": {
+    "title": "Аналітика",
+    "allPeriods": "Всі періоди",
+    "day": "День",
+    "week": "Тиждень",
+    "month": "Місяць",
+    "quarter": "Квартал",
+    "year": "Рік",
+    "allCategories": "Всі категорії",
+    "income": "Дохід",
+    "expense": "Витрата",
+    "search": "Пошук...",
+    "totalIncome": "Загальний дохід",
+    "totalExpense": "Загальні витрати",
+    "balance": "Баланс",
+    "topCategory": "Топ категорія",
+    "date": "Дата",
+    "amount": "Сума",
+    "category": "Категорія",
+    "name": "Назва",
+    "note": "Примітка",
+    "exportCSV": "Експортувати CSV",
+    "exportPDF": "Експортувати PDF"
+  }
+}

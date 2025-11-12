@@ -1,0 +1,251 @@
+.home {
+  background: rgba(0, 0, 0, .95);
+  margin: 40px auto;
+  width: 90%;
+  height: 70%;
+  padding: 2em 2em 2em;
+  border-radius: 2em;
+  white-space: nowrap;
+}
+
+label {
+  position: absolute;
+  top: 10px;
+  font-size: 17px;
+  font-weight: 800;
+  color: rgb(153, 153, 153, 0.7);
+  transition: all 0.5s ease;
+  pointer-events: none;
+  overflow: hidden; 
+  text-overflow: ellipsis;
+}
+.labelL{
+  left: 25%;
+  width: 50%;
+}
+.labelS{
+  left: 12%;
+  width: 60%;
+}
+.labelM{
+  left: 36%;
+  width: 25%;
+  top: 0px;
+}
+.labelA{
+  text-align: center;
+  left: 37%;
+  width: 25%;
+  top: 0px;
+}
+.labelB{
+  text-align: center;
+  left: 37%;
+  width: 25%;
+  top: 0px;
+}
+.labelG{
+  left: 0.5%;
+  font-size: 12px;
+  width: 25%;
+  top: 7px;
+}
+.labelC{
+  left: 3%;
+  width: 40%;
+  top: 7px;
+}
+.labelH{
+  left: 3%;
+  width: 40%;
+  top: 7px;
+}
+input:focus + label,
+input:not(:placeholder-shown) + label {
+  position: absolute;
+  top: -1px;
+  right: 5px;
+  font-size: 0.7em;
+  color: #999;
+  pointer-events: none;
+  width: auto;
+  text-align: center;
+}
+input:focus + .labelL,
+input:not(:placeholder-shown) + .labelL {
+  transform: translateX(-17%);
+}
+input:focus + .labelS,
+input:not(:placeholder-shown) + .labelS {
+  transform: translateX(-9%);
+}
+input:focus + .labelM,
+input:not(:placeholder-shown) + .labelM {
+  transform: translateX(-29%);
+}
+input:focus + .labelA,
+input:not(:placeholder-shown) + .labelA {
+  transform: translateX(-48%);
+}
+input:focus + .labelB,
+input:not(:placeholder-shown) + .labelB {
+  transform: translateX(-46%);
+  align-self: left;
+}
+input:focus + .labelC,
+input:not(:placeholder-shown) + .labelC {
+  transform: translateX(-40%);
+}
+input:focus + .labelH,
+input:not(:placeholder-shown) + .labelH {
+  transform: translateX(-35%);
+}
+input:focus + .labelI,
+input:not(:placeholder-shown) + .labelI {
+  transform: translateX(-35%);
+}
+input:focus + .labelG,
+input:not(:placeholder-shown) + .labelG {
+  transform: translateX(-45%);
+  font-size: 0.5em;
+  top: 2px;
+}
+.input-container {
+  display: flex;
+  flex-wrap: wrap;
+  position: relative;
+}
+#add_category {
+  position: absolute;
+  width: 150%;
+  transform: translate(-0%, -50%);
+  background: rgba(255, 255, 255, 0.8);
+  padding: 5% 17% 5% 5%;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+  border-radius: 8px;
+}
+
+#add_account {
+  position: absolute;
+  width: 220%;
+  transform: translate(-1%, -50%);
+  background: rgba(255, 255, 255, 0.8);
+  padding: 5% 17% 5% 5%;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+  border-radius: 8px;
+}
+
+.add_accountIB {
+  flex: 1 1 calc(32% - 10px);
+  padding: 10px;
+  text-align: right;
+  box-sizing: border-box;
+  color: white;
+  border: none;
+  font-size: 14px;
+  border-radius: 8px;
+  position: relative;
+}
+
+#add_account button:hover,
+#insert_button button:hover {
+  background-color: #0056b3;
+}
+
+#transactionForms {
+  margin: 0 0 0 83%;
+  width: 17%;
+  font-weight: 800;
+  font-size: 14px;
+  border-radius: 8px;
+}
+
+#transactionIB {
+  margin: 0 0.5% 0.5% 35%;
+  width: 30%;
+  font-weight: 800;
+  font-size: 16px;
+  border-radius: 8px;
+  text-align: center;
+}
+
+#transactionI {
+  width: 100%;
+  margin: 0 0 0.5% 0;
+  font-weight: 800;
+  font-size: 16px;
+  align-items: center;
+  border-radius: 8px;
+  text-align: center;
+}
+
+#insert_button {
+  position: relative;
+  display: inline-block;
+  width: 15%;
+  border-radius: 8px;
+}
+
+#exit_span {
+  display: block;
+  text-align: right;
+  position: absolute;
+  top: 0;
+  right: 2.5%;
+  cursor: pointer;
+}
+
+#logo {
+  background: rgba(255, 255, 255, .85);
+  width: 200px;
+  height: 90px;
+  border-radius: 50%;
+  white-space: nowrap;
+  margin-left: 20px;
+  position: absolute;
+}
+
+#transactionsList {
+  border: 1px solid #ddd;
+  border-style: groove;
+  padding: 8px;
+  text-align: center;
+}
+
+.highlighted-form {
+  background-color: rgba(3, 111, 226, 0.05);
+  padding: 20px;
+  border: 5px #004c9e;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.9);
+}
+body.dark .home {
+  background: rgba(30, 30, 30, 0.95); 
+  color: #e0e0e0;
+}
+
+body.dark label {
+  color: rgba(200, 200, 200, 0.7);
+}
+
+body.dark #add_category,
+body.dark #add_account {
+  background: rgba(50, 50, 50, 0.9);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+}
+
+body.dark #transactionForms,
+body.dark #transactionIB,
+body.dark #transactionI {
+  background: rgba(60, 60, 60, 0.9);
+  color: #ffffff;
+}
+
+body.dark #transactionsList {
+  border: 1px solid #444; 
+}
+
+body.dark .highlighted-form {
+  background-color: rgba(3, 111, 226, 0.1); 
+  border-color: #0077cc; 
+}

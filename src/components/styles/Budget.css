@@ -1,0 +1,221 @@
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+/* Budget.css - стилі для сторінки бюджету з урахуванням теми з App.css */
+
+
+.budget-container {
+  background: var(--budget-bg, #2D3748);
+  color: var(--budget-color, #E5E7EB);
+  border-radius: 2em;
+  padding: 2em;
+  margin: 15px auto 60px auto;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+  width: 85%;
+  transition: background 0.4s, color 0.4s;
+}
+.budget-list {
+  display: block;
+  margin-top: 2em;
+}
+
+.budget-card {
+  background: inherit;
+  color: inherit;
+  border-radius: 1.2em;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  width: 100%;
+  min-height: 160px;
+  margin-bottom: 2em;
+  gap: 32px;
+}
+.budget-card-info {
+  flex: 1;
+}
+.budget-card-chart {
+  min-width: 120px;
+  max-width: 140px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  height: 120px;
+  margin-left: auto;
+}
+
+.budget-form {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 2em;
+  width: 100%;
+  position: relative;
+}
+
+.budget-form-row {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  gap: 16px;
+  width: 100%;
+}
+
+.budget-input {
+  background-color: #fff;
+  color: #1F2937;
+  border: 1px solid #CED4DA;
+  border-radius: 8px;
+  padding: 0.5em 1em;
+  width: 260px;
+  font-size: 1em;
+  box-sizing: border-box;
+  margin: 0 0 8px 0;
+  transition: border-color 0.3s;
+}
+body.dark .budget-input {
+  background-color: rgb(45, 45, 45);
+  color: rgb(200, 200, 200);
+  border: none;
+}
+
+.budget-form .budget-btn {
+  align-self: flex-end;
+  width: 260px;
+  border-radius: 8px;
+  margin-top: 8px;
+  font-size: 1em;
+  padding: 0.5em 1em;
+}
+
+.budget-card h3 {
+  margin: 0 0 0.5em 0;
+  font-size: 1.3em;
+  color: inherit;
+}
+.budget-progress {
+  width: 100%;
+  height: 12px;
+  background: #CED4DA;
+  border-radius: 6px;
+  overflow: hidden;
+  margin-top: 0.7em;
+}
+.budget-progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, #4299E1 0%, #1D4ED8 100%);
+  border-radius: 6px;
+  transition: width 0.4s;
+}
+body.dark .budget-progress {
+  background: #4A5568;
+}
+body.dark .budget-progress-bar {
+  background: linear-gradient(90deg, #007BFF 0%, #1D4ED8 100%);
+}
+
+body.light .budget-container {
+  background: #F3F4F6;
+  color: #1F2937;
+}
+body.dark .budget-container {
+  background: #2D3748;
+  color: #E5E7EB;
+}
+
+.budget-title {
+  text-align: center;
+  font-size: 2em;
+  margin-bottom: 1em;
+  color: inherit;
+}
+
+.budget-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 1.5em;
+  background: inherit;
+  color: inherit;
+}
+.budget-table th, .budget-table td {
+  padding: 0.75em 1em;
+  border-bottom: 1px solid #CED4DA;
+  text-align: left;
+}
+body.dark .budget-table th, body.dark .budget-table td {
+  border-bottom: 1px solid #4A5568;
+}
+.budget-table th {
+  background: rgba(66, 153, 225, 0.15);
+  color: inherit;
+}
+
+.budget-actions {
+  display: flex;
+  gap: 1em;
+  justify-content: flex-end;
+  margin-top: 1em;
+}
+
+.budget-btn {
+  background-color: #4299E1;
+  color: #fff;
+  border: none;
+  margin-right: 10px;
+  border-radius: 5px;
+  padding: 0.5em 1.2em;
+  cursor: pointer;
+  transition: background 0.3s, color 0.3s;
+}
+.budget-btn:hover {
+  background-color: #1D4ED8;
+}
+body.light .budget-btn {
+  background-color: #4299E1;
+  color: #fff;
+}
+body.dark .budget-btn {
+  background-color: #007BFF;
+  color: #fff;
+}
+
+.budget-input {
+  background-color: #fff;
+  color: #1F2937;
+  border: 1px solid #CED4DA;
+  border-radius: 5px;
+  padding: 0.5em;
+  width: 60%;
+}
+body.dark .budget-input {
+  background-color: rgb(45, 45, 45);
+  color: rgb(200, 200, 200);
+  border: none;
+}
+
+.budget-empty {
+  text-align: center;
+  color: #888;
+  margin-top: 2em;
+}
+
+@media (max-width: 900px) {
+  .budget-container {
+    width: 98%;
+    padding: 1em;
+  }
+  .budget-title {
+    font-size: 1.3em;
+  }
+  .budget-list {
+    gap: 1em;
+  }
+  .budget-card {
+    min-width: 180px;
+    max-width: 98vw;
+    padding: 1em;
+  }
+}
