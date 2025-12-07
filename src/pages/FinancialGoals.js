@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import '../components/styles/FinancialGoals.css';
+import { formatMoney, fetchRates } from '../utils/currency';
 
 function FinancialGoals() {
   const { t } = useTranslation();
@@ -13,6 +14,9 @@ function FinancialGoals() {
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [preferredCurrency, setPreferredCurrency] = useState(localStorage.getItem('defaultCurrency') || 'USD');
+  const [useFxConversion, setUseFxConversion] = useState(localStorage.getItem('useFxConversion') === 'true');
+  const [fxRates, setFxRates] = useState(null);
 
   // Fetch goals from backend
   useEffect(() => {
@@ -30,6 +34,24 @@ function FinancialGoals() {
     };
     fetchGoals();
   }, []);
+
+  useEffect(() => {
+    let mounted = true;
+    if (!preferredCurrency) setPreferredCurrency(localStorage.getItem('defaultCurrency') || 'USD');
+    async function loadRates() {
+      if (!useFxConversion || !preferredCurrency) { setFxRates(null); return; }
+      const r = await fetchRates(preferredCurrency);
+      if (mounted) setFxRates(r);
+    }
+    loadRates();
+
+    const onChange = () => {
+      setPreferredCurrency(localStorage.getItem('defaultCurrency') || 'USD');
+      setUseFxConversion(localStorage.getItem('useFxConversion') === 'true');
+    };
+    window.addEventListener('currencyChanged', onChange);
+    return () => { mounted = false; window.removeEventListener('currencyChanged', onChange); };
+  }, [preferredCurrency, useFxConversion]);
 
   // Handle form input change
   const handleChange = (e) => {
@@ -131,8 +153,8 @@ function FinancialGoals() {
               return (
                 <div className="goalCard" key={goal._id || goal.id}>
                   <h3>{goal.name}</h3>
-                  <p><strong>{t('goal.amount')}:</strong> ${goal.targetAmount}</p>
-                  <p><strong>{t('goal.current')}:</strong> ${goal.currentAmount}</p>
+                  <p><strong>{t('goal.amount')}:</strong> {useFxConversion && preferredCurrency ? formatMoney(goal.targetAmount, preferredCurrency, preferredCurrency, fxRates, true) : formatMoney(goal.targetAmount, preferredCurrency)}</p>
+                  <p><strong>{t('goal.current')}:</strong> {useFxConversion && preferredCurrency ? formatMoney(goal.currentAmount, preferredCurrency, preferredCurrency, fxRates, true) : formatMoney(goal.currentAmount, preferredCurrency)}</p>
                   <p><strong>{t('goal.deadline')}:</strong> {deadline}</p>
                   <div className="progressBar">
                     <div

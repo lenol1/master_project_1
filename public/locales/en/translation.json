@@ -21,7 +21,13 @@
       "name": "Name",
       "note": "Note",
       "exportCSV": "Export CSV",
-      "exportPDF": "Export PDF"
+      "exportPDF": "Export PDF",
+      "incomeVsExpenseOverTime": "Income vs Expense — by date",
+      "transactionCounts": "Transactions — count by type",
+      "expensesDonutTitle": "Expenses breakdown",
+      "topCategories": "Top Expense Categories",
+      "expensesLegend": "Expenses by category",
+      "totalExpenseShort": "Total"
     },
     "login": {
       "title": "Login",
@@ -63,7 +69,8 @@
       "transaction": "Transactions",
       "budgets": "Budgets",
       "financialGoals": "Financial Goals",
-      "analytics": "Analytics"
+      "analytics": "Analytics",
+      "categories": "Categories"
     },
     "main": {
       "transaction": "Transactions",
@@ -103,6 +110,7 @@
       "expense": "Expense",
       "save": "Save",
       "add": "Add",
+      "setCategory": "Set category",
       "cancel": "Cancel",
       "edit": "Edit",
       "delete": "Delete",
@@ -111,7 +119,10 @@
       "date": "Date",
       "balance": "Balance",
       "actions": "Actions",
-      "importMonobank": "Import from Monobank"
+      "importMonobank": "Import from Monobank",
+      "modelUpdated": "Personalized model updated",
+      "predict": "Predict",
+      "clearPrediction": "Clear prediction"
     },
     "filters": {
       "from": "From",
@@ -140,7 +151,8 @@
       "overdue": "Overdue Since",
       "end": "End Date",
       "progress": "Progress",
-      "empty": "No Goals Available"
+      "empty": "No Goals Available",
+      "title":"Financial Goals"
     },
     "category": {
       "type": "Type",
@@ -153,12 +165,14 @@
       "cancel": "Cancel",
       "name": "Name",
       "description": "Description",
-      "manage": "Manage Categories",
+      "manage": "...",
       "manageTitle": "Category Management",
       "actions": "Actions",
       "all": "All Categories",
       "uknown": "Unknown",
-      "close": "Close"
+      "close": "Close",
+      "create": "Create Category",
+      "list": "Categories List"
     },
     "budget": {
       "budget": "Budgets",
@@ -185,7 +199,9 @@
       "status": "Status",
       "currentexp": "Current Expense",
       "optimalexp": "Optimal Expense",
-      "empty": "No budgets available"
+      "empty": "No budgets available",
+      "syncing": "Syncing budgets...",
+      "syncCategoriesToBudgets": "Sync Categories to Budgets"
     },
     "account": {
       "addAccount": "Account",
@@ -223,7 +239,9 @@
     },
     "chart": {
       "complete": "Completed",
-      "remain": "Remaining"
+      "remain": "Remaining",
+      "income":"Income",
+      "expense":"Expense"
     },
     "transactionL": {
       "Card Transaction": "Card Transaction",
@@ -286,6 +304,16 @@
       "budgetsOverview": "Budgets",
       "used": "used",
       "expensesByCategory": "Expenses by Category",
+      "quickGoals": "Your Goals",
       "incomeVsExpense": "Income vs Expense"
+    },
+    "settings": {
+      "title": "Settings",
+      "defaultCurrency": "Default currency",
+      "useFx": "Enable FX conversion"
+    },
+    "data": {
+      "load": "Load more",
+      "hide": "Show less"
     }
   }

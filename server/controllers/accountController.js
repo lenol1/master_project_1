@@ -1,5 +1,6 @@
 const { get_objectId } = require('../storage/get_setObjectId');
 const Account = require('../models/account');
+const { round2 } = require('../utils/round');
 
 const createAccount = async (req, res) => {
   try {
@@ -13,7 +14,7 @@ const createAccount = async (req, res) => {
       name,
       type,
       currency,
-      balance,
+      balance: round2(balance),
       bankName,
       cardNumber
     });
@@ -32,7 +33,9 @@ const getAccountsByUser = async (req, res) => {
     if (!userId) return res.status(400).json({ message: 'UserId not found' });
 
     const accounts = await Account.find({ userId });
-    res.status(200).json(accounts);
+    // ensure returned balances are rounded to 2 decimals
+    const roundedAccounts = accounts.map(a => ({ ...a.toObject(), balance: round2(a.balance) }));
+    res.status(200).json(roundedAccounts);
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Internal server error' });
@@ -44,7 +47,7 @@ const getAccountById = async (req, res) => {
     const { id } = req.params;
     const account = await Account.findById(id);
     if (!account) return res.status(404).json({ message: 'Account not found' });
-    res.status(200).json(account);
+    res.status(200).json({ ...account.toObject(), balance: round2(account.balance) });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Internal server error' });
@@ -56,10 +59,10 @@ const updateAccount = async (req, res) => {
     const { id } = req.params;
     const updateData = req.body;
 
+    if (updateData.balance !== undefined) updateData.balance = round2(updateData.balance);
     const updatedAccount = await Account.findByIdAndUpdate(id, updateData, { new: true });
     if (!updatedAccount) return res.status(404).json({ message: 'Account not found' });
-
-    res.status(200).json(updatedAccount);
+    res.status(200).json({ ...updatedAccount.toObject(), balance: round2(updatedAccount.balance) });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Internal server error' });

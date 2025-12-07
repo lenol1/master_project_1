@@ -12,6 +12,8 @@ import Transactions from "./pages/Transactions.js";
 import Budgets from "./pages/Budgets.js";
 import FinancialGoals from "./pages/FinancialGoals.js";
 import Analytics from "./pages/Analytics.js";
+import Categories from "./pages/Categories.js";
+import Settings from "./pages/Settings.js";
 import './i18n';
 import ThemeSwitcher from "./context/ThemeSwitcher.js";
 
@@ -25,9 +27,11 @@ function App() {
           <Route path="/signup" element={<Header variant="login/signup" />} />
           <Route path="/home" element={<Header variant="home" />} />
           <Route path="/transactions" element={<Header variant="home" />} />
+          <Route path="/categories" element={<Header variant="home" />} />
           <Route path="/budgets" element={<Header variant="home" />} />
           <Route path="/financial-goals" element={<Header variant="home" />} />
           <Route path="/analytics" element={<Header variant="home" />} />
+          <Route path="/settings" element={<Header variant="home" />} />
           {/* інші маршрути */}
         </Routes>
         <Routes>
@@ -36,9 +40,11 @@ function App() {
           <Route path="/home" element={<Home />} />
           <Route path="/github-callback" element={<GitHubCallback onLoginSuccess={() => { }} />} />
           <Route path="/transactions" element={<Transactions />} />
+          <Route path="/categories" element={<Categories />} />
           <Route path="/budgets" element={<Budgets />} />
           <Route path="/financial-goals" element={<FinancialGoals />} />
           <Route path="/analytics" element={<Analytics />} />
+          <Route path="/settings" element={<Settings />} />
           {/* інші маршрути */}
         </Routes>
       </div>

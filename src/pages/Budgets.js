@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Doughnut } from 'react-chartjs-2';
 import { Chart, ArcElement, Tooltip, Legend } from 'chart.js';
 import { useTranslation } from 'react-i18next';
+import { formatMoney, fetchRates } from '../utils/currency';
 import '../components/styles/Budget.css';
 
 function Budgets() {
@@ -28,11 +29,31 @@ function Budgets() {
     });
     // Видалено функцію додавання суми
     const [transactions, setTransactions] = useState([]);
+    const [syncInProgress, setSyncInProgress] = useState(false);
+    const [preferredCurrency, setPreferredCurrency] = useState(localStorage.getItem('defaultCurrency') || null);
+    const [useFxConversion, setUseFxConversion] = useState(localStorage.getItem('useFxConversion') === 'true');
+    const [fxRates, setFxRates] = useState(null);
 
     useEffect(() => {
     Chart.register(ArcElement, Tooltip, Legend);
     fetchBudgets();
     fetchTransactions();
+    // load fx rates if needed
+    let mounted = true;
+    async function loadRates() {
+        if (!useFxConversion || !preferredCurrency) { setFxRates(null); return; }
+        const rates = await fetchRates(preferredCurrency);
+        if (mounted) setFxRates(rates);
+    }
+    if (!preferredCurrency) setPreferredCurrency(localStorage.getItem('defaultCurrency') || 'USD');
+    loadRates();
+
+    const onChange = () => {
+        setPreferredCurrency(localStorage.getItem('defaultCurrency') || 'USD');
+        setUseFxConversion(localStorage.getItem('useFxConversion') === 'true');
+    };
+    window.addEventListener('currencyChanged', onChange);
+    return () => { mounted = false; window.removeEventListener('currencyChanged', onChange); };
     }, []);
 
     const fetchBudgets = async () => {
@@ -141,6 +162,43 @@ function Budgets() {
                 >
                     {showForm ? t('form.close') : t('form.addbudget')}
                 </button>
+                <button
+                    className="budget-btn"
+                    style={{ marginLeft: '0.5em', marginBottom: '1em', width: '220px', alignSelf: 'flex-end' }}
+                    onClick={async () => {
+                            setSyncInProgress(true);
+                            try {
+                                // Call server endpoint to sync categories->categories & budgets from transactions
+                                const res = await fetch('http://localhost:5000/categories/sync-from-transactions', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ userId: localStorage.getItem('userId') })
+                                });
+
+                                // If network-level failure, fetch will throw and we'll catch below
+                                const data = await res.json().catch(() => ({}));
+                                if (!res.ok) {
+                                    // server returned an error response with details
+                                    const errMsg = data && (data.error || data.detail || data.message) ? (data.error || data.detail || data.message) : `HTTP ${res.status}`;
+                                    throw new Error(errMsg);
+                                }
+
+                                   const createdList = data.created && data.created.length ? ('created: ' + data.created.join(', ')) : '';
+                                   const updatedList = data.updated && data.updated.length ? ('updated: ' + data.updated.join(', ')) : '';
+                                   const messageParts = [createdList, updatedList].filter(Boolean).join('; ') || 'none';
+                                // refresh budgets and transactions
+                                await fetchBudgets();
+                                await fetchTransactions();
+                            } catch (err) {
+                                console.error('Sync failed', err);
+                            } finally {
+                                setSyncInProgress(false);
+                            }
+                        }}
+                disabled={syncInProgress}
+                >
+                    {syncInProgress ? t('budget.syncing') : t('budget.syncCategoriesToBudgets')}
+                </button>
             </div>
             {showForm && (
                 <form className="budget-form" onSubmit={handleAddBudget} style={{ marginBottom: '2em', animation: 'fadeIn 0.3s' }}>
@@ -164,12 +222,14 @@ function Budgets() {
                             .filter(tx => tx.category === b.category && new Date(tx.date) >= new Date(b.startDate) && new Date(tx.date) <= new Date(b.endDate))
                             .reduce((sum, tx) => sum + Math.abs(Number(tx.amount)), 0);
                         const limit = b.limit || 0;
-                        const percent = limit > 0 ? Math.min(100, Math.round((spent / limit) * 100)) : 0;
+                        const spentRounded = Number(spent.toFixed(2));
+                        const remaining = Number(Math.max(0, limit - spentRounded).toFixed(2));
+                        const percent = limit > 0 ? Math.min(100, Math.round((spentRounded / limit) * 100)) : 0;
                         const doughnutData = {
                             labels: [t('budget.spent'), t('budget.remaining')],
                             datasets: [
                                 {
-                                    data: [spent, Math.max(0, limit - spent)],
+                                    data: [spentRounded, remaining],
                                     backgroundColor: [
                                         '#4299E1',
                                         '#6d839eff'
@@ -195,11 +255,11 @@ function Budgets() {
                                         </form>
                                     ) : (
                                         <>
-                                            <h3>{b.name}</h3>
+                                            <h3>{b.name ? b.name.replace(/\s*\(default\)\s*$/i, '') : b.name}</h3>
                                             <p>{t('budget.category')}: {b.category}</p>
-                                            <p>{t('budget.limit')}: ${limit}</p>
-                                            <p>{t('budget.spent')}: ${spent}</p>
-                                            <p>{t('budget.remaining')}: ${limit - spent}</p>
+                                            <p>{t('budget.limit')}: {useFxConversion && preferredCurrency ? formatMoney(Number(limit), preferredCurrency, preferredCurrency, fxRates, true) : formatMoney(Number(limit), preferredCurrency)}</p>
+                                            <p>{t('budget.spent')}: {useFxConversion && preferredCurrency ? formatMoney(spentRounded, preferredCurrency, preferredCurrency, fxRates, true) : formatMoney(spentRounded, preferredCurrency)}</p>
+                                            <p>{t('budget.remaining')}: {useFxConversion && preferredCurrency ? formatMoney(remaining, preferredCurrency, preferredCurrency, fxRates, true) : formatMoney(remaining, preferredCurrency)}</p>
                                             <p>{t('budget.period')}: {new Date(b.startDate).toLocaleDateString()} - {new Date(b.endDate).toLocaleDateString()}</p>
                                             <div className="budget-progress">
                                                 <div className="budget-progress-bar" style={{ width: `${percent}%` }}></div>

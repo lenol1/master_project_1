@@ -6,9 +6,12 @@ from sklearn.model_selection import train_test_split
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.pipeline import Pipeline
 from sklearn.ensemble import RandomForestClassifier
-from datasets import Dataset
-from transformers import BertTokenizer, BertForSequenceClassification, TrainingArguments, Trainer
 import config
+
+# Import heavy BERT libraries only if needed (to avoid unnecessary deps for RF)
+if config.MODEL_TYPE == "BERT":
+    from datasets import Dataset
+    from transformers import BertTokenizer, BertForSequenceClassification, TrainingArguments, Trainer
 
 # --- 1. Функція завантаження та очищення даних ---
 def load_and_clean_data(file_path):

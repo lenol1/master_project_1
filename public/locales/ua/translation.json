@@ -23,4 +23,9 @@
     "exportCSV": "Експортувати CSV",
     "exportPDF": "Експортувати PDF"
   }
+  ,
+  "transaction": {
+    "setCategory": "Встановити категорію",
+    "modelUpdated": "Персоналізована модель оновлена"
+  }
 }

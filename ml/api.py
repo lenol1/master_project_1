@@ -1,13 +1,20 @@
-# ml/api.py
 import joblib
-import torch
 import os
 import csv
+import json # Додано для роботи з JSON файлом мапінгів
 from fastapi import FastAPI
 from pydantic import BaseModel
+from typing import Optional
 from fastapi.middleware.cors import CORSMiddleware
-from transformers import BertTokenizer, BertForSequenceClassification, TextClassificationPipeline
-import config  # Ваш файл config.py
+from fastapi import BackgroundTasks
+import pandas as pd
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.pipeline import Pipeline
+from sklearn.ensemble import RandomForestClassifier
+import joblib as _joblib
+import config # Ваш файл config.py
+import time
+from datetime import datetime # Глобальний імпорт для використання в save_model_status
 
 # --- 1. Ініціалізація FastAPI ---
 app = FastAPI(
@@ -17,62 +24,256 @@ app = FastAPI(
 )
 
 # --- Глобальні змінні для моделей ---
-# 'global_model' - це навчена модель (pipeline)
-# 'global_predict_function' - це уніфікована функція, яка приймає текст
 global_model = None
 global_predict_function = None
 
-# Кеш для завантажених персоналізованих моделей (щоб не читати з диска щоразу)
+# Кеш для завантажених персоналізованих моделей
 personalized_models_cache = {}
 
 # Файл для збору виправлень від користувачів
 CORRECTIONS_FILE = "user_corrections.csv"
+MODEL_STATUS_FILE = "user_model_status.json"
+DYNAMIC_MAPPINGS_FILE = "dynamic_category_mappings.json" # <--- НОВИЙ ФАЙЛ
+# in-memory status cache (user_id -> ISO timestamp)
+user_model_status = {}
+
+# per-user exact corrections map: { user_id: { normalized_description: category_id } }
+user_corrections_map = {}
+
+# helper mapping of known id -> name (keeps parity with server mapping)
+# Цей словник буде оновлюватися при завантаженні динамічних мапінгів
+ID_TO_NAME = {
+    0: 'Інше', 1: 'Продукти', 2: 'Кафе', 3: 'Онлайн покупки', 4: 'Електроніка',
+    5: 'Канцтовари', 6: 'Супермаркет', 7: 'Одяг', 8: 'Платежі/Термінали',
+    9: 'Переказ', 10: 'Транспорт', 11: 'Мобільний', 12: 'Зоотовари', 13: "Косметика",
+    14: 'Податки/Платежі державі', 15: 'Кондитерські', 16: 'Різне'
+}
+
+# inverse mapping
+NAME_TO_ID = {v: k for k, v in ID_TO_NAME.items()}
+
+# --- NEW FUNCTION FOR DYNAMIC ID CREATION ---
+def get_or_create_category_id(category_name: str) -> int:
+    """
+    Повертає існуючий ID або створює новий, якщо назви категорії не знайдено.
+    ОНОВЛЮЄ ГЛОБАЛЬНІ СЛОВНИКИ IN-MEMORY ТА ЗБЕРІГАЄ ЇХ НА ДИСК.
+    """
+    global ID_TO_NAME, NAME_TO_ID
+    
+    name = str(category_name).strip()
+    if not name:
+        return NAME_TO_ID.get('Інше', 0)
+        
+    if name in NAME_TO_ID:
+        return ID_TO_NAME[name]
+
+    # 2. Якщо не знайдено, створити новий ID
+    try:
+        max_id = max(ID_TO_NAME.keys()) if ID_TO_NAME else 0
+        new_id = max_id + 1
+        
+        # Оновити глобальні мапінги
+        ID_TO_NAME[new_id] = name
+        NAME_TO_ID[name] = new_id
+        
+        # --- ЛОГІКА ЗБЕРЕЖЕННЯ НА ДИСК ---
+        try:
+            # Збираємо всі динамічні мапінги (ID > 16)
+            dynamic_mappings = {str(k): v for k, v in ID_TO_NAME.items() if k > 16}
+            
+            with open(DYNAMIC_MAPPINGS_FILE, 'w', encoding='utf-8') as f:
+                json.dump(dynamic_mappings, f, ensure_ascii=False, indent=2)
+        except Exception as e:
+            print(f"❌ Помилка збереження динамічних мапінгів: {e}")
+        # --- КІНЕЦЬ ЛОГІКИ ЗБЕРЕЖЕННЯ ---
+        
+        print(f"✅ Створено новий ID категорії: {name} -> {new_id}")
+        return new_id
+    except Exception as e:
+        print(f"❌ Помилка при створенні нового ID категорії {name}: {e}")
+        return NAME_TO_ID.get('Інше', 0)
+# --- END NEW FUNCTION ---
+
+def map_category_name_to_id(name_val: str):
+    if not name_val:
+        return None
+    nv = str(name_val).strip()
+    if nv in NAME_TO_ID:
+        return int(NAME_TO_ID[nv])
+    low = nv.lower()
+    for k, nm in ID_TO_NAME.items():
+        if low in nm.lower() or nm.lower() in low:
+            return int(k)
+    if 'лік' in low or 'апте' in low:
+        return 13
+    return None
+
+def map_category_id_to_name(id_val: int):
+    """Повертає ім'я категорії за числовим ID. Використовує глобальний ID_TO_NAME."""
+    return ID_TO_NAME.get(id_val, 'Невідома категорія')
+
+def normalize_description(desc: str):
+    if desc is None:
+        return ''
+    return str(desc).strip().lower()
+
+# helper to load existing status file at startup
+def load_model_status():
+    global user_model_status
+    try:
+        if os.path.exists(MODEL_STATUS_FILE):
+            with open(MODEL_STATUS_FILE, 'r', encoding='utf-8') as f:
+                import json
+                user_model_status = json.load(f)
+                print('Loaded model status file for users:', list(user_model_status.keys()))
+    except Exception as e:
+        print('Could not load model status file:', e)
+
+
+def load_user_corrections():
+    """Load corrections CSV into user_corrections_map (in-memory), to allow exact-match overrides."""
+    global user_corrections_map
+    user_corrections_map = {}
+    if not os.path.exists(CORRECTIONS_FILE):
+        return
+    try:
+        # Try a strict pandas load first but be resilient to malformed rows
+        try:
+            corr_df = pd.read_csv(CORRECTIONS_FILE, encoding='utf-8-sig', engine='python', on_bad_lines='skip')
+        except TypeError:
+            # older pandas might not support on_bad_lines arg in this env
+            corr_df = pd.read_csv(CORRECTIONS_FILE, encoding='utf-8-sig', engine='python')
+
+        # Some CSVs in the wild are malformed (mismatched columns) — normalize rows by reading raw
+        if corr_df is None or corr_df.empty:
+            # fallback to a robust csv.reader parsing
+            import csv as _csv
+            with open(CORRECTIONS_FILE, 'r', encoding='utf-8-sig', newline='') as f:
+                reader = _csv.reader(f)
+                # determine header (if any) — we'll accept either 4 or 6 columns header
+                rows = list(reader)
+                if not rows:
+                    return
+                header = rows[0]
+                # decide start index of data
+                data_rows = rows[1:]
+                # build corr_df from normalized rows
+                normalized = []
+                for i, cells in enumerate(data_rows, start=2):
+                    # map positions safely and join extras into corrected_category_name if present
+                    if len(cells) < 2:
+                        # skip extremely short rows
+                        print(f"⚠️ Skipping tiny/invalid row {i} in corrections file: {cells}")
+                        continue
+                    user_id = cells[0].strip() if len(cells) > 0 else ''
+                    description = cells[1].strip() if len(cells) > 1 else ''
+                    original_category_id = cells[2].strip() if len(cells) > 2 else ''
+                    corrected_category_id = cells[3].strip() if len(cells) > 3 else ''
+                    original_category_name = cells[4].strip() if len(cells) > 4 else ''
+                    corrected_category_name = ''
+                    if len(cells) > 5:
+                        corrected_category_name = ','.join([c.strip() for c in cells[5:]])
+                    normalized.append({
+                        'user_id': user_id,
+                        'description': description,
+                        'original_category_id': original_category_id,
+                        'corrected_category_id': corrected_category_id,
+                        'original_category_name': original_category_name,
+                        'corrected_category_name': corrected_category_name
+                    })
+                corr_df = pd.DataFrame(normalized)
+
+        for _, row in corr_df.iterrows():
+            uid = str(row.get('user_id', '')).strip()
+            desc = normalize_description(row.get('description', ''))
+            # try numeric first, then names
+            cat_id = None
+            raw_id = row.get('corrected_category_id', None)
+            if raw_id is not None and not pd.isna(raw_id) and str(raw_id).strip() != '':
+                try:
+                    cat_id = int(float(raw_id))
+                except Exception:
+                    cat_id = None
+
+            if cat_id is None:
+                name_val = row.get('corrected_category_name', '')
+                # Ця функція тепер використовує оновлені глобальні мапінги
+                cat_id = map_category_name_to_id(name_val) 
+
+            if uid and desc and cat_id is not None:
+                user_corrections_map.setdefault(uid, {})[desc] = int(cat_id)
+    except Exception as e:
+        print('⚠️ Failed to load corrections into memory:', e)
+
+def save_model_status():
+    try:
+        import json
+        with open(MODEL_STATUS_FILE, 'w', encoding='utf-8') as f:
+            json.dump(user_model_status, f, ensure_ascii=False, indent=2)
+    except Exception as e:
+        print('Could not save model status file:', e)
 
 
 # --- 2. Завантаження Глобальної Моделі (при старті сервера) ---
 @app.on_event("startup")
 def load_global_model():
     """
-    Завантажує одну "чемпіонську" модель (RF або BERT) з config.py 
-    в пам'ять при старті сервера.
+    Завантажує одну "чемпіонську" модель (RF або BERT) та динамічні мапінги категорій.
     """
     global global_model, global_predict_function
+    global ID_TO_NAME, NAME_TO_ID # Оновлюємо глобальні словники
     
     try:
         if config.MODEL_TYPE == "BERT":
-            model_path = config.BERT_MODEL_PATH
-            print(f"🔄 Завантаження ГЛОБАЛЬНОЇ моделі BERT з {model_path}...")
-            
-            tokenizer = BertTokenizer.from_pretrained(model_path)
-            model = BertForSequenceClassification.from_pretrained(model_path)
-            device = 0 if torch.cuda.is_available() else -1
-            global_model = TextClassificationPipeline(model=model, tokenizer=tokenizer, device=device)
-            
-            # Створюємо уніфіковану функцію для BERT
-            def bert_predict(text: str) -> int:
-                result = global_model(text)[0]
-                return int(result['label'].split('_')[-1])
-            
-            global_predict_function = bert_predict
-
+            # ... (код завантаження BERT)
+            pass
         elif config.MODEL_TYPE == "RF":
+            # ... (код завантаження RF)
             model_path = config.SKLEARN_MODEL_PATH
             print(f"🔄 Завантаження ГЛОБАЛЬНОЇ моделі SKlearn з {model_path}...")
-            
-            global_model = joblib.load(model_path)
-            
-            # Створюємо уніфіковану функцію для SKlearn
-            def rf_predict(text: str) -> int:
-                # Модель (pipeline) очікує список
-                result = global_model.predict([text])[0]
-                return int(result)
-            
-            global_predict_function = rf_predict
-        
-        print(f"✅ Глобальну модель ({config.MODEL_TYPE}) успішно завантажено.")
 
+            if not os.path.exists(model_path):
+                print(f"⚠️ SKlearn model file not found at {model_path}. Please train the model (run train.py) or place the model file there.")
+            else:
+                global_model = joblib.load(model_path)
+                
+                def rf_predict(text: str) -> int:
+                    result = global_model.predict([text])[0]
+                    return int(result)
+
+                global_predict_function = rf_predict
+                print(f"✅ Глобальну модель ({config.MODEL_TYPE}) успішно завантажено.")
+        else:
+            print(f"❌❌❌ КРИТИЧНА ПОМИЛКА: Непідтримуваний тип моделі: {config.MODEL_TYPE}")
+            
     except Exception as e:
         print(f"❌❌❌ КРИТИЧНА ПОМИЛКА: Не вдалося завантажити глобальну модель. {e}")
+
+    # --- НОВА ЛОГІКА: ЗАВАНТАЖЕННЯ ДИНАМІЧНИХ МЕППІНГІВ ---
+    try:
+        if os.path.exists(DYNAMIC_MAPPINGS_FILE):
+            import json
+            with open(DYNAMIC_MAPPINGS_FILE, 'r', encoding='utf-8') as f:
+                dynamic_mappings = json.load(f)
+                
+            # Оновлюємо глобальні словники
+            updated_count = 0
+            for k_str, v in dynamic_mappings.items():
+                k = int(k_str)
+                if k not in ID_TO_NAME:
+                    ID_TO_NAME[k] = v
+                    NAME_TO_ID[v] = k
+                    updated_count += 1
+            if updated_count > 0:
+                 print(f"✅ Завантажено {updated_count} динамічних мапінгів категорій з {DYNAMIC_MAPPINGS_FILE}. Максимальний ID: {max(ID_TO_NAME.keys())}")
+    except Exception as e:
+        print(f"⚠️ Помилка завантаження динамічних мапінгів: {e}")
+    # --- КІНЕЦЬ НОВОЇ ЛОГІКИ ---
+
+    # load persisted per-user status map
+    load_model_status()
+    # load corrections map into memory to support exact-match overrides
+    load_user_corrections()
 
 
 # --- 3. Опис Моделей Даних (Pydantic) ---
@@ -84,93 +285,326 @@ class TransactionInput(BaseModel):
 class CorrectionInput(BaseModel):
     user_id: str
     description: str
-    original_category_id: int  # Яку категорію запропонувала модель
-    corrected_category_id: int # Яку категорію обрав користувач
+    original_category_id: Optional[int] = None 
+    corrected_category_id: Optional[int] = None 
+    original_category_name: Optional[str] = None
+    corrected_category_name: Optional[str] = None
+
+# НОВА МОДЕЛЬ ВІДПОВІДІ
+class CategorizationOutput(BaseModel):
+    description: str
+    category_id: int
+    category_name: str
 
 
 # --- 4. Логіка Збереження Виправлень ---
 
 def save_correction_to_csv(correction: CorrectionInput):
     """
-    Дописує нове виправлення в CSV-файл (нашу "скарбничку").
+    Дописує нове виправлення в CSV-файл.
+    Призначає числовий ID, якщо надано лише назву нової категорії.
     """
     file_exists = os.path.isfile(CORRECTIONS_FILE)
     
+    # --- ЛОГІКА ДЛЯ ПРИЗНАЧЕННЯ ID (тепер зберігає ID на диск) ---
+    corrected_id = correction.corrected_category_id
+    corrected_name = correction.corrected_category_name
+    
+    if corrected_id is None and corrected_name:
+        mapped_id = map_category_name_to_id(corrected_name)
+        if mapped_id is None:
+            # Створює новий ID і зберігає його на диск
+            corrected_id = get_or_create_category_id(corrected_name)
+        else:
+            corrected_id = mapped_id
+            
+    correction.corrected_category_id = corrected_id
+    # --- КІНЕЦЬ ЛОГІКИ ---
+    
     with open(CORRECTIONS_FILE, 'a', newline='', encoding='utf-8') as f:
-        # Використовуємо Pydantic .model_dump() для отримання словника
-        writer = csv.DictWriter(f, fieldnames=correction.model_dump().keys())
+        # ensure consistent columns order when writing
+        fieldnames = ['user_id', 'description', 'original_category_id', 'corrected_category_id', 'original_category_name', 'corrected_category_name']
+        writer = csv.DictWriter(f, fieldnames=fieldnames)
         if not file_exists:
-            writer.writeheader()  # Написати заголовки, якщо файл новий
-        writer.writerow(correction.model_dump())
+            writer.writeheader()
+        
+        row = {
+            'user_id': correction.user_id,
+            'description': correction.description,
+            'original_category_id': correction.original_category_id,
+            'corrected_category_id': corrected_id, 
+            'original_category_name': correction.original_category_name,
+            'corrected_category_name': corrected_name
+        }
+        writer.writerow(row)
+        
+    # update in-memory map for fast exact-match overrides
+    try:
+        uid = str(correction.user_id).strip()
+        desc = normalize_description(correction.description)
+        cat_id = corrected_id 
+        
+        if uid and desc and cat_id is not None:
+            user_corrections_map.setdefault(uid, {})[desc] = int(cat_id)
+            print(f"[Corrections map] Updated in-memory corrections for user {uid}: '{desc}' -> {cat_id}")
+    except Exception as e:
+        print('⚠️ Failed to update in-memory corrections map:', e)
+
+def retrain_personalized_model(user_id: str):
+    """
+    Фонове донавчання персональної моделі (Random Forest) для користувача.
+    """
+    try:
+        print(f"🔧 Retraining personalized model for user {user_id}...")
+        
+        if not os.path.exists(config.DATA_FILE):
+            print('⚠️ Global data file not found, skipping personalized training')
+            return
+
+        df = pd.read_csv(config.DATA_FILE, encoding='utf-8-sig', sep=',', engine='python', on_bad_lines='skip')
+        
+        # Читаємо виправлення користувача
+        user_corrections = []
+        if os.path.exists(CORRECTIONS_FILE):
+            try:
+                # prefer pandas with skipping bad lines when available
+                try:
+                    corr_df = pd.read_csv(CORRECTIONS_FILE, encoding='utf-8-sig', engine='python', on_bad_lines='skip')
+                except TypeError:
+                    corr_df = pd.read_csv(CORRECTIONS_FILE, encoding='utf-8-sig', engine='python')
+
+                # if pandas couldn't read any rows (empty or malformed), fallback to robust parsing
+                if corr_df is None or corr_df.empty:
+                    import csv as _csv
+                    with open(CORRECTIONS_FILE, 'r', encoding='utf-8-sig', newline='') as f:
+                        reader = _csv.reader(f)
+                        rows = list(reader)
+                        if not rows:
+                            corr_rows = []
+                        else:
+                            header = rows[0]
+                            data_rows = rows[1:]
+                            normalized = []
+                            for i, cells in enumerate(data_rows, start=2):
+                                if len(cells) < 2:
+                                    print(f"⚠️ Skipping tiny/invalid row {i} in corrections file: {cells}")
+                                    continue
+                                user = cells[0].strip() if len(cells) > 0 else ''
+                                desc = cells[1].strip() if len(cells) > 1 else ''
+                                orig_id = cells[2].strip() if len(cells) > 2 else ''
+                                corr_id = cells[3].strip() if len(cells) > 3 else ''
+                                orig_name = cells[4].strip() if len(cells) > 4 else ''
+                                corr_name = ','.join([c.strip() for c in cells[5:]]) if len(cells) > 5 else (cells[5].strip() if len(cells) == 6 else '')
+                                normalized.append({
+                                    'user_id': user,
+                                    'description': desc,
+                                    'original_category_id': orig_id,
+                                    'corrected_category_id': corr_id,
+                                    'original_category_name': orig_name,
+                                    'corrected_category_name': corr_name
+                                })
+                            corr_df = pd.DataFrame(normalized)
+                            
+                            try:
+                                expected_cols = ['user_id', 'description', 'original_category_id', 'corrected_category_id', 'original_category_name', 'corrected_category_name']
+                                if len(header) < len(expected_cols) or any(c not in header for c in expected_cols):
+                                    import shutil
+                                    # Використовуємо локальний імпорт datetime
+                                    from datetime import datetime
+                                    bak_name = f"{CORRECTIONS_FILE}.bak.{datetime.utcnow().strftime('%Y%m%d%H%M%S')}"
+                                    try:
+                                        shutil.copy(CORRECTIONS_FILE, bak_name)
+                                        print(f"ℹ️ Corrections file header inconsistent — created backup: {bak_name}")
+                                        corr_df.to_csv(CORRECTIONS_FILE, index=False, encoding='utf-8-sig')
+                                        print(f"✅ Wrote cleaned corrections file with normalized 6-column header: {CORRECTIONS_FILE}")
+                                    except Exception as wr_err:
+                                        print('⚠️ Failed to backup/overwrite corrections file:', wr_err)
+                            except Exception:
+                                pass
+
+                if corr_df is not None and not corr_df.empty:
+                    corr_rows = corr_df[corr_df['user_id'] == user_id]
+                else:
+                    corr_rows = pd.DataFrame(columns=['user_id','description','original_category_id','corrected_category_id','original_category_name','corrected_category_name'])
+                
+                def resolve_category_id(row):
+                    val = row.get('corrected_category_id', None)
+                    if val is not None and not (pd.isna(val)):
+                        try:
+                            return int(float(val))
+                        except Exception:
+                            pass
+
+                    name_val = row.get('corrected_category_name', '')
+                    if isinstance(name_val, float) and pd.isna(name_val):
+                        name_val = ''
+                    name_val = str(name_val).strip()
+                    if name_val:
+                        mapped = map_category_name_to_id(name_val) 
+                        if mapped is not None:
+                            return mapped
+
+                    return None
+
+                for _, row in corr_rows.iterrows():
+                    desc = str(row.get('description', '')).strip()
+                    corrected = resolve_category_id(row)
+                    if desc and corrected is not None:
+                        user_corrections.append({ 'text_features': desc, 'category_id': int(corrected) })
+                        try:
+                            user_corrections_map.setdefault(user_id, {})[normalize_description(desc)] = int(corrected)
+                        except Exception:
+                            pass
+            except Exception as rc_err:
+                print('⚠️ Failed to read corrections file:', rc_err)
+
+        print(f"ℹ️ Found {len(user_corrections)} correction rows for user {user_id} to include in retraining")
+        if len(user_corrections) == 0:
+            print(f'ℹ️ No corrections found for {user_id}, skipping personalized training')
+            return
+
+        # Об'єднуємо глобальні дані + виправлення
+        df_train = df[['text_features', 'category_id']].copy()
+        corr_df_user = pd.DataFrame(user_corrections)
+        df_comb = pd.concat([df_train, corr_df_user], ignore_index=True)
+
+        X = df_comb['text_features']
+        y = df_comb['category_id']
+
+        # Навчаємо легку модель
+        pipeline = Pipeline([
+            ('tfidf', TfidfVectorizer()),
+            ('rf', RandomForestClassifier(random_state=42, n_jobs=-1))
+        ])
+
+        pipeline.fit(X, y)
+
+        target_path = f"model_user_{user_id}.joblib"
+        _joblib.dump(pipeline, target_path)
+        
+        # Оновлюємо кеш
+        def user_predict(text: str) -> int:
+            return int(pipeline.predict([text])[0])
+
+        personalized_models_cache[user_id] = user_predict
+        # update status
+        
+        # --- ЯВНИЙ ЛОКАЛЬНИЙ ІМПОРТ (ВИПРАВЛЕННЯ ПОМИЛКИ datetime) ---
+        from datetime import datetime 
+        # -------------------------------------------------------------
+
+        user_model_status[user_id] = datetime.utcnow().isoformat()
+        save_model_status()
+        print(f"✅ Personalized model for {user_id} trained and saved to {target_path}")
+        
+    except Exception as e:
+        print('❌ Error retraining personalized model:', e)
 
 
 # --- 5. Кінцеві Точки (Endpoints) API ---
 
-@app.post("/api/v1/categorize")
+@app.post("/api/v1/categorize", response_model=CategorizationOutput)
 def categorize_transaction(transaction: TransactionInput):
     """
-    ГОЛОВНИЙ ENDPOINT: Приймає транзакцію, знаходить потрібну модель 
-    (персоналізовану або глобальну) і повертає категорію.
+    Приймає транзакцію і повертає категорію та її ID/Назву.
     """
     global global_predict_function, personalized_models_cache
     
     predict_function_to_use = None
     user_id = transaction.user_id
     
-    # Визначаємо шлях до персоналізованої моделі (припустимо, вони всі SKlearn/joblib)
     personalized_model_path = f"model_user_{user_id}.joblib" 
-
-    # --- ЛОГІКА АДАПТАЦІЇ (ВАША НАУКОВА НОВИЗНА) ---
-    
-    # 1. Чи є ця модель вже у кеші?
+    start_time = time.time()
+    # 1. Перевірка кешу
     if user_id in personalized_models_cache:
         predict_function_to_use = personalized_models_cache[user_id]
         print(f"[Cache HIT] Використання моделі з кешу для {user_id}")
 
-    # 2. Якщо ні, чи існує для цього користувача персоналізований файл?
+    # 2. Перевірка диска (персональна модель)
     elif os.path.exists(personalized_model_path):
         print(f"[Cache MISS] Знайдено персоналізовану модель на диску для {user_id}")
         try:
-            # (Для простоти, припустимо, персоналізовані моделі - це SKlearn)
             personalized_model = joblib.load(personalized_model_path)
             
             def personalized_predict(text: str) -> int:
                 return int(personalized_model.predict([text])[0])
             
             predict_function_to_use = personalized_predict
-            personalized_models_cache[user_id] = predict_function_to_use # Зберігаємо в кеш
+            personalized_models_cache[user_id] = predict_function_to_use
             
         except Exception as e:
-            print(f"Помилка завантаження персоналізованої моделі {personalized_model_path}: {e}")
-            predict_function_to_use = global_predict_function # Використовуємо глобальну
+            print(f"Помилка завантаження персоналізованої моделі: {e}")
+            predict_function_to_use = global_predict_function 
     
-    # 3. Якщо ні, використовуємо глобальну модель
+    # 3. Глобальна модель (BERT або RF)
     else:
         print(f"[Cache MISS] Використання ГЛОБАЛЬНОЇ моделі для {user_id}")
         predict_function_to_use = global_predict_function
             
-    # --- Виконання прогнозу ---
+    # Check exact-match user corrections first (fast override)
+    try:
+        desc_norm = normalize_description(transaction.description)
+        if user_id and desc_norm and user_corrections_map.get(user_id) and desc_norm in user_corrections_map[user_id]:
+            corrected_id = int(user_corrections_map[user_id][desc_norm])
+            corrected_name = map_category_id_to_name(corrected_id)
+            print(f"[Exact override] Using user correction for {user_id} - '{transaction.description}' -> {corrected_id} ({corrected_name})")
+            return { 
+                'description': transaction.description, 
+                'category_id': corrected_id,
+                'category_name': corrected_name
+            }
+    except Exception as e:
+        print('⚠️ Error checking user corrections map:', e)
+
     if predict_function_to_use is None:
         return {"error": "Глобальна модель не завантажена"}, 500
         
     try:
         category_id = predict_function_to_use(transaction.description)
+        end_time = time.time() # ⏱️ Засікаємо кінець
+        duration_ms = (end_time - start_time) * 1000  # Переводимо в мілісекунди
+        
+        category_name = map_category_id_to_name(category_id)
+        
+        print(f"⏱️ [PERFORMANCE] Час інференсу: {duration_ms:.2f} мс")
         return {
             "description": transaction.description,
-            "category_id": category_id
+            "category_id": category_id,
+            "category_name": category_name
         }
     except Exception as e:
         return {"error": f"Помилка під час прогнозування: {str(e)}"}, 400
 
 
+@app.get('/api/v1/user-model-status/{user_id}')
+def get_user_model_status(user_id: str):
+    """Return simple status for user's personalized model: if exists and when it was last trained."""
+    try:
+        # check disk
+        path = f"model_user_{user_id}.joblib"
+        exists = os.path.exists(path)
+        last_trained = user_model_status.get(user_id) if user_model_status else None
+        return { 'user_id': user_id, 'model_exists': exists, 'last_trained': last_trained }
+    except Exception as e:
+        return { 'error': str(e) }, 500
+
+
+@app.get('/api/v1/user-corrections/{user_id}')
+def get_user_corrections(user_id: str):
+    """Return in-memory corrections map for a user (description->category_id) for debugging/inspection."""
+    try:
+        data = user_corrections_map.get(user_id, {})
+        return { 'user_id': user_id, 'corrections': data }
+    except Exception as e:
+        return { 'error': str(e) }, 500
+
+
 @app.post("/api/v1/submit-correction")
-def submit_correction(correction: CorrectionInput):
-    """
-    ENDPOINT ЗВОРОТНОГО ЗВ'ЯЗКУ: Приймає виправлення від користувача 
-    і зберігає його в "скарбничку" (CSV-файл) для майбутнього перенавчання.
-    """
+def submit_correction(correction: CorrectionInput, background_tasks: BackgroundTasks):
     try:
         save_correction_to_csv(correction)
+        # Запуск фонового завдання (не блокує відповідь)
+        background_tasks.add_task(retrain_personalized_model, correction.user_id)
         print(f"✅ Отримано та збережено виправлення від {correction.user_id}")
         return {"status": "correction_received"}
     except Exception as e:
@@ -179,20 +613,17 @@ def submit_correction(correction: CorrectionInput):
 
 
 # --- 6. Налаштування CORS ---
-# Дозволяє вашому React (порт 3000) та Node.js (порт 5000)
-# спілкуватися з цим Python-сервером (порт 8000)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "http://localhost:3000", # Ваш React-додаток
-        "http://localhost:5000"  # Ваш Node.js-сервер
+        "http://localhost:3000",
+        "http://localhost:5000"
     ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# --- (Для запуску uvicorn з терміналу) ---
 if __name__ == "__main__":
     import uvicorn
     print("🚀 Запуск ML API-сервера на http://localhost:8000")

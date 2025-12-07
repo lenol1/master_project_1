@@ -3,7 +3,7 @@ const Budget = require('../models/budget');
 
 const createBudget = async (req, res) => {
   try {
-    const userId = get_objectId();
+    const userId = (req && req.user && req.user.id) ? req.user.id : get_objectId();
     if (!userId) return res.status(400).json({ message: 'UserId not found' });
 
     const { name, limit, startDate, endDate, category, account} = req.body;
@@ -29,7 +29,7 @@ const createBudget = async (req, res) => {
 
 const getBudgetsByUser = async (req, res) => {
   try {
-    const userId = get_objectId();
+    const userId = (req && req.user && req.user.id) ? req.user.id : get_objectId();
     if (!userId) return res.status(400).json({ message: 'UserId not found' });
 
     const budgets = await Budget.find({ userId }).sort({ startDate: -1 });

@@ -39,7 +39,8 @@
     "transaction": "Перекази",
     "budgets": "Бюджети",
     "financialGoals": "Фінансові Цілі",
-    "analytics": "Аналітика"
+    "analytics": "Аналітика",
+    "categories": "Категорії"
   },
   "main": {
     "transaction": "Перекази",
@@ -87,7 +88,11 @@
   "date": "Дата",
   "balance": "Баланс",
   "actions": "Дії",
-  "importMonobank": "Імпортувати транзакції з Monobank"
+  "importMonobank": "Імпортувати з Monobank",
+  "setCategory": "Встановити категорію",
+  "modelUpdated": "Персоналізована модель оновлена",
+  "predict": "Прогнозувати",
+  "clearPrediction": "Очистити прогноз"
 
 },
 "filters": {
@@ -117,7 +122,8 @@
     "overdue": "Прострочено З",
     "end": "Кінцева Дата",
     "progress": "Прогрес",
-    "empty": "Немає Доступних Цілей"
+    "empty": "Немає Доступних Цілей",
+    "title":"Фінансові Цілі"
   },
   "category": {
   "type": "Тип",
@@ -130,12 +136,14 @@
   "cancel": "Скасувати",
   "name": "Назва",
   "description": "Опис",
-  "manage": "Керувати Категоріями",
+  "manage": "...",
   "manageTitle": "Управління Категоріями",
   "actions": "Дії",
   "all": "Усі Категорії",
   "uknown": "Невідомо",
-  "close": "Закрити"
+  "close": "Закрити",
+  "create": "Створити Категорію",
+  "list": "Список Категорій"
   },
   "budget": {
     "budget": "Бюджети",
@@ -162,7 +170,9 @@
     "status": "Стан",
     "currentexp": "Поточні витрати",
     "optimalexp": "Оптимальні витрати",
-    "empty": "Немає Доступних Бюджетів"
+    "empty": "Немає Доступних Бюджетів",
+    "syncing": "Синхронізація бюджетів...",
+    "syncCategoriesToBudgets": "Синхронізувати з Категорій"
   },
   "account": {
     "addAccount": "Рахунок",
@@ -200,7 +210,9 @@
   },
   "chart": {
     "complete": "Виконано",
-    "remain": "Залишилось"
+    "remain": "Залишилось",
+    "income":"Дохід",
+    "expense":"Витрати"
   },
   "transactionL": {
     "Card Transaction": "Карткова транзакція",
@@ -245,6 +257,7 @@
     "budgetsOverview": "Бюджети",
     "used": "використано",
     "expensesByCategory": "Витрати за категоріями",
+    "quickGoals": "Ваші цілі",
     "incomeVsExpense": "Дохід vs Витрата"
   }
   ,
@@ -270,6 +283,21 @@
     "name": "Назва",
     "note": "Примітка",
     "exportCSV": "Експортувати CSV",
-    "exportPDF": "Експортувати PDF"
+    "exportPDF": "Експортувати PDF",
+    "incomeVsExpenseOverTime": "Дохід vs Витрата — по датам",
+    "transactionCounts": "Кількість транзакцій — за типом",
+    "expensesDonutTitle": "Розподіл витрат",
+    "topCategories": "Топ категорій витрат",
+    "expensesLegend": "Витрати за категоріями",
+    "totalExpenseShort": "Всього"
+  },
+  "settings": {
+    "title": "Налаштування",
+    "defaultCurrency": "Валюта за замовчуванням",
+    "useFx": "Увімкнути FX конверсію"
+  },
+  "data": {
+    "load": "Завантажити ще",
+    "hide": "Приховати"
   }
 }

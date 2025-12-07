@@ -99,7 +99,7 @@ function Categories() {
 
   return (
     <div className="budget-container">
-      <h1 className="budget-title">{t('category.type')}</h1>
+      <h1 className="budget-title">{t('category.create')}</h1>
       <form className="budget-form" onSubmit={handleSubmit} style={{ marginBottom: '2em', display: 'flex', gap: '12px', alignItems: 'center', justifyContent: 'center' }}>
         <input className="budget-input" type="text" name="name" value={form.name} onChange={handleInputChange} placeholder={t('category.name') || 'Category name'} required style={{ flex: 1, minWidth: '140px' }} />
         <select className="budget-input" name="type" value={form.type} onChange={handleInputChange} required style={{ flex: 1, minWidth: '140px' }}>
@@ -110,31 +110,32 @@ function Categories() {
         <button className="budget-btn" type="submit" style={{ flex: 1, minWidth: '120px' }}>{t('category.add')}</button>
       </form>
       {error && <div className="budget-empty">{error}</div>}
-      <div className="budget-list">
+      <h2 style={{marginLeft:0, marginBottom: '1.5em'}}>{t('category.list')}:</h2>
+      <div className="budget-list" style={{ maxWidth: '1200px', margin: '0 auto' }}>
         {loading ? <div className="budget-empty">Loading...</div> : categories.length === 0 ? (
           <div className="budget-empty">No categories found</div>
         ) : (
           categories.map(cat => (
             <div className="budget-card" key={cat._id}>
               {editId === cat._id ? (
-                <form className="budget-form" onSubmit={handleEditSubmit} style={{ marginBottom: '1em' }}>
+                <form className="budget-form" onSubmit={handleEditSubmit} style={{ marginBottom: '0.2em' }}>
                   <input className="budget-input" type="text" name="name" value={editForm.name} onChange={handleEditInputChange} required />
                   <select className="budget-input" name="type" value={editForm.type} onChange={handleEditInputChange} required>
                     <option value="expense">{t('category.expense')}</option>
                     <option value="income">{t('category.income')}</option>
                   </select>
                   <input className="budget-input" type="text" name="description" value={editForm.description} onChange={handleEditInputChange} />
-                  <button className="budget-btn" type="submit">{t('form.save')}</button>
-                  <button className="budget-btn" type="button" onClick={() => setEditId(null)}>{t('form.cancel')}</button>
+                  <button className="budget-btn" type="submit" style={{ minWidth: '110px', padding: '8px 18px' }}>{t('form.save')}</button>
+                  <button className="budget-btn" type="button" style={{ minWidth: '110px', padding: '8px 18px' }} onClick={() => setEditId(null)}>{t('form.cancel')}</button>
                 </form>
               ) : (
                 <>
                   <h3>{cat.name}</h3>
                   <p>{t('category.type')}: {t(`category.${cat.type}`) || cat.type}</p>
                   <p>{t('transaction.description')}: {cat.description}</p>
-                  <div className="budget-actions">
-                    <button className="budget-btn" onClick={() => handleEdit(cat)}>{t('form.edit')}</button>
-                    <button className="budget-btn" onClick={() => handleDelete(cat._id)}>{t('form.delete')}</button>
+                  <div className="budget-actions" style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+                    <button className="budget-btn" style={{ minWidth: '110px', padding: '8px 18px' }} onClick={() => handleEdit(cat)}>{t('form.edit')}</button>
+                    <button className="budget-btn" style={{ minWidth: '110px', padding: '8px 18px' }} onClick={() => handleDelete(cat._id)}>{t('form.delete')}</button>
                   </div>
                 </>
               )}

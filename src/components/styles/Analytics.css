@@ -27,11 +27,15 @@ body.light .analyticsPage {
   background: #2D3748;
   color: #fff;
   border-radius: 2em;
-  padding: 2em;
+  padding: 1.25em 2em;
   margin: 15px auto 60px auto;
   box-shadow: 0 2px 10px rgba(0,0,0,0.1);
   width: 85%;
-  text-align: center;
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
   color: #fff;
 }
 body.light .analyticsKPI {
@@ -46,15 +50,24 @@ body.light .kpiCard {
   box-shadow: 0 1px 4px rgba(0,0,0,0.04);
 }
 
+.analyticsKPI .kpiCard {
+  flex: 1 1 220px;
+  margin: 6px;
+  min-width: 180px;
+}
+
 .analyticsCharts {
-  display: flex;
+  display: grid;
+  /* prefer a three-column grid on wide screens, but fall back to responsive columns */
+  grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
   gap: 20px;
-  flex-wrap: wrap;
+  align-items: start;
 }
 
 .chart {
-  flex: 1 1 300px;
-  height: 250px;
+  position: relative; /* reserved for .chartTitle */
+  box-sizing: border-box;
+  height: 360px;
   background: #23293a;
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0,0,0,0.1);
@@ -63,6 +76,29 @@ body.light .kpiCard {
   align-items: center;
   color: #fff;
 }
+
+.chartTitle {
+  width: 100%;
+  text-align: center;
+  font-weight: 700;
+  padding: 8px 12px 6px 12px;
+  color: #cbd5e1;
+  box-sizing: border-box;
+}
+
+/* Legend container for pie chart - limit height and allow scrolling */
+.pieLegend {
+  max-height: calc(100% - 48px); /* leaves room for title */
+  overflow-y: auto;
+  padding-right: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.pieLegendRow { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.pieLegendRow > div:first-child { display:flex; align-items:center; gap:8px; }
+.pieLegendRow .legendLabel { font-size: 13px; color: #cbd5e1; }
+.pieLegendRow .legendPct { font-size: 12px; color: #9ca3af; }
 body.light .chart {
   background: #fff;
   color: #1F2937;
@@ -73,7 +109,7 @@ body.light .chart {
   color: #fff;
   border-radius: 2em;
   padding: 2em;
-  margin: 15px auto 60px auto;
+  margin: 15px auto 20px auto;
   box-shadow: 0 2px 10px rgba(0,0,0,0.1);
   width: 85%;
   transition: background 0.4s, color 0.4s;
